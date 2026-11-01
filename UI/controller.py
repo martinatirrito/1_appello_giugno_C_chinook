@@ -81,5 +81,51 @@ class Controller:
 
         self._view.update_page()
 
-    def handleSelezione(self,e):
-        pass
+    def handleSelezione(self, e):
+        self._view._txt_result.controls.clear()
+
+        # validazione 1: grafo creato
+        if self._model.getNumNodi() == 0:
+            self._view.create_alert("Creare prima il grafo.")
+            return
+
+        # validazione 2: artista scelto
+        if self._view._ddArtista.value is None:
+            self._view.create_alert("Selezionare un artista.")
+            return
+
+        # validazione 3: N intero (anche il campo vuoto "" dà ValueError)
+        try:
+            N = int(self._view._txtInN.value)
+        except (ValueError, TypeError):
+            self._view.create_alert("Inserire un numero intero per N.")
+            return
+
+        # validazione 4: N positivo (lo chiede il testo)
+        if N < 1:
+            self._view.create_alert("N deve essere un intero positivo.")
+            return
+
+        # stringa -> int -> OGGETTO Artist (il Model vuole l'oggetto)
+        start = self._model.getArtistById(int(self._view._ddArtista.value))
+        if start is None:
+            self._view.create_alert("Artista non presente nel grafo.")
+            return
+
+        gruppo, totBrani = self._model.getBestGroup(start, N)  # spacchetto 2 valori
+
+        # nessun gruppo valido (N troppo grande o vincolo peso 1 troppo stretto)
+        if len(gruppo) == 0:
+            self._view._txt_result.controls.append(
+                ft.Text(f"Nessun gruppo di {N} artisti trovato a partire da {start}."))
+            self._view.update_page()
+            return
+
+        self._view._txt_result.controls.append(ft.Text("Artisti selezionati:"))
+        # lista ordinata alfabeticamente per nome
+        for a in sorted(gruppo, key=lambda x: x.Name):
+            self._view._txt_result.controls.append(
+                ft.Text(f"{a.Name} - brani: {len(a.Tracks)} - playlist: {len(a.Playlists)}"))
+        self._view._txt_result.controls.append(ft.Text(f"Numero di artisti selezionati: {len(gruppo)}"))
+        self._view._txt_result.controls.append(ft.Text(f"Numero complessivo di brani: {totBrani}"))
+        self._view.update_page()
